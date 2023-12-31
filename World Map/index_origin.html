@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <base target="_top" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Mapa 01</title>
+
+    <!-- <button id="highlight-button">Resaltar Países</button> -->
+
+    <link rel="stylesheet" href="style.css">
+
+    <link
+      rel="shortcut icon"
+      type="image/x-icon"
+      href="docs/images/favicon.ico"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="http://unpkg.com/leaflet@latest/dist/leaflet.js"></script>
+    <script src="js/leaflet-providers.js"></script>
+    <!-- <script src="jquery-3.6.4.min.js"></script> -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    
+    
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .leaflet-container {
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <style>
+      #map {
+        width: 700px;
+        height: 400px;
+      }
+      .info {
+        padding: 6px 8px;
+        font: 14px/16px Arial, Helvetica, sans-serif;
+        background: white;
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        border-radius: 5px;
+      }
+      .info h4 {
+        margin: 0 0 5px;
+        color: #777;
+      }
+      .legend {
+        text-align: left;
+        line-height: 18px;
+        color: #555;
+      }
+      .legend i {
+        width: 18px;
+        height: 18px;
+        float: left;
+        margin-right: 8px;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div class="centered-content">
+      <div class="graph-text main-text">
+        <h1 class="oracion">
+          Mapa interactivo de los diferentes entrenadores por países
+        </h1> 
+      </div>
+
+      <div>
+        <div onchange="MergeCountries()">
+          <span>Deportes:&nbsp;</span>
+          <select id="sportSelect">
+            <option value="all"     >   Todos</option>
+            <option value="baseball" >   Beísbol</option>
+            <option value="voly"  >   Volleyball</option>
+            <option value="futbol"     >   Futbol</option>
+            <option value="rugby"     >   Rugby</option>
+            <option value="handball">  Balonmano</option>
+            <option value="softball">    Softbal</option>
+            <option value="polo">       Polo</option>
+            <option value="hockey" >    Hockey</option>
+              <option value="basket">   Basketbol</option>
+            </select>
+
+            <span>Categoría:&nbsp;</span>
+            <select id="categorySelect">
+              <option value="null">---</option>
+              <option value="female">Femenina</option>
+              <option value="male">Masculina</option>
+            </select>
+            
+            <span>Entrenadores:&nbsp;</span>
+            <select id="genderSelect">
+              <option value="null">---</option>
+              <option value="female">Mujeres</option>
+              <option value="male">Hombres</option>
+            </select>
+            
+            <span>Continente:&nbsp;</span> 
+              <select id="continentSelect">
+                <option value="null">---</option>
+                <option value="América" >America</option>
+                <option value="África" >Africa</option>
+                <option value="Asia" >Asia</option>
+                <option value="Europa" >Europa</option>
+                <option value="Australia y Oceanía" >Oceania</option>
+              </select>
+
+          </div>
+      </div>
+
+
+    <div id="map"></div>
+
+    <script type="text/javascript" src="countries.js"></script>
+
+    <script type="text/javascript">
+
+
+      const map = L.map("map").setView([20, -20], 1);
+      const jsonData = getData();
+      const allCountries = ['kaz', 'arg', 'uga', 'tga', 'kor', 'zam', 'den', 'cub', 'mas', 
+                            'rus', 'ven', 'aus', 'chi', 'usa', 'alg', 'pol', 'vie', 'ned', 
+                            'can', 'mex', 'ita', 'fij', 'slo', 'bul', 'mne', 'tun', 'isl', 
+                            'cro', 'sen', 'nzl', 'bra', 'srd', 'aut', 'por', 'phi', 'swe', 
+                            'tpe', 'hkg', 'uzb', 'ind', 'iri', 'nca', 'jpn', 'fin', 'cgo', 
+                            'ukr', 'mar', 'dom', 'cmr', 'rou', 'gha', 'mad', 'sui', 'cpv', 
+                            'ken', 'rsa', 'uru', 'svk', 'cze', 'pan', 'hun', 'qat', 'ecu', 
+                            'civ', 'tur', 'mli', 'hai', 'irl', 'esp', 'eng', 'lib', 'pur', 
+                            'jor', 'ang', 'crc', 'srb', 'sco', 'DEN', 'geo', 'sam', 'fra', 
+                            'lat', 'ngr', 'nor', 'par', 'bih', 'chn', 'wal', 'jam', 'egy', 
+                            'col', 'ksa', 'brn', 'ltu', 'ssd', 'ger', 'zim', 'gre', 'gbr', 
+                            'isr', 'bel', 'tha', 'mkd', 'irn'];
+
+      async function getData() {
+        const data = await $.getJSON('../data/data.json');
+        return data;
+      }
+
+      const info = L.control();
+
+      info.onAdd = function (map) {
+        this._div = L.DomUtil.create("div", "info");
+        this.update();
+        return this._div;
+      };
+      
+      let activeCountries = [];
+      info.update = function () {
+       
+        const contents = `Existen ${activeCountries.length} países que satisfacen su filtrado.`;
+        this._div.innerHTML = `<h4>Información sobre el filtrado </h4>${contents}`;
+      }
+
+      info.addTo(map);
+
+      const tiles = L.tileLayer("Thunderforest.Transport", {
+        maxZoom: 20,
+        attribution:
+          '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>',
+      }).addTo(map);
+
+      let sportsList = allCountries;
+      let team_sexList = allCountries;
+      let trainer_sexList= allCountries;
+      let developmentList= allCountries;
+      let continentsList= allCountries;
+      let mergedList = allCountries;
+
+
+      const filterGender = document.getElementById("genderSelect");
+      const filterContinent = document.getElementById("continentSelect");
+      const filterDev = document.getElementById("devSelect");
+      const filterSport = document.getElementById("sportSelect");
+      const filterCategory = document.getElementById("categorySelect");
+
+
+      // get color depending on majority of data
+      function getColor(id) {
+        if(activeCountries.includes(id))
+        {
+          if(filterCategory.value == 'null') return ' #33ff99'
+          if(filterCategory.value == 'female') return '#ffcccc';
+          if(filterCategory.value == 'male') return '#99ccff';
+        }
+        else{
+          return "#FFEDA0";
+        }
+      }
+
+      function style(feature) {
+        return {
+          weight: 2,
+          opacity: 1,
+          color: "white",
+          dashArray: "3",
+          fillOpacity: 0.7,
+          fillColor: getColor(feature.id),
+        };
+      }
+
+      function highlightFeature(e) {
+        const layer = e.target;
+
+        layer.setStyle({
+          weight: 5,
+          color: "#666",
+          dashArray: "",
+          fillOpacity: 0.7,
+        });
+
+        layer.bringToFront();
+
+        // info.update(layer.feature.properties);
+      }
+
+      const geojson = L.geoJson(countriesData, {
+        style,
+        onEachFeature,
+      }).addTo(map);
+
+      geojson.eachLayer(function (layer) {
+        layer.bindPopup(layer.feature.properties.name);
+      });
+
+      function resetHighlight(e) {
+        geojson.resetStyle(e.target);
+        // info.update();
+      }
+
+      async function zoomToFeature(e) {
+        var layer = e.target;
+        map.fitBounds(layer.getBounds());
+        var popupContent = layer.feature.properties.name;
+        layer.bindPopup(popupContent).openPopup();
+      }
+
+      function onEachFeature(feature, layer) {
+        layer.on({
+          mouseover: highlightFeature,
+          mouseout: resetHighlight,
+          click: zoomToFeature,
+        });
+      }
+      
+      map.attributionControl.addAttribution(
+        '<a href="http://metodologia.cu/">Fuentes</a>'
+      );
+
+        var tonga = L.marker([-20.54838, -175.40676]).bindPopup("Tonga");
+        var barein = L.marker([26.16835, 50.52564]).bindPopup("Barein");
+        var samoa = L.marker([-13.85302, -172.05893]).bindPopup("Somoa");
+        var hkong = L.marker([22.55581, 114.22982]).bindPopup("Hong Kong");
+        var cabo = L.marker( [14.90082429, -24.70433509]).bindPopup("Cabo Verde");
+        var gbr = L.marker( [55.738709,-2.117615],).bindPopup("Gran Bretaña");
+          //hide for now
+        map.removeLayer(tonga);
+        map.removeLayer(barein);
+        map.removeLayer(samoa);
+        map.removeLayer(hkong);
+
+      function updateMap() {
+        activeCountries = Array.from(new Set(activeCountries));
+        info.update();
+        //little countries
+        const countryLayers = {
+          'cpv': cabo,
+          'tga': tonga,
+          'mas': barein,
+          'sam': samoa,
+          'hkg': hkong,
+          'gbr': gbr
+        };
+
+        Object.keys(countryLayers).forEach(countryCode => {
+          const layer = countryLayers[countryCode];
+          if (activeCountries.includes(countryCode)) {
+            layer.addTo(map);
+          } else {
+            map.removeLayer(layer);
+          }
+        });
+
+        if (activeCountries.includes('gbr'))
+        {
+          const coiGBR = ['eng', 'sco', 'wal', 'irn'];
+          activeCountries = activeCountries.concat(coiGBR);
+        }
+
+          geojson.eachLayer(function (layer) {
+          const id = layer.feature.id;
+          layer.setStyle({fillColor: getColor(id)});
+          geojson.addTo(map);
+        },
+
+      )};
+
+     
+      function getCountriesBySport(json, sportName)
+      {
+        const countries = [];
+        for (var sportId in json.sports) 
+        {
+          if(sportId === sportName)
+          {
+            for (var c in json.sports[sportId].female.countries)
+            {
+              countries.push(json.sports[sportId].female.countries[c].country_id);
+            }
+            for (var w in json.sports[sportId].male.countries)
+            {
+              countries.push(json.sports[sportId].male.countries[w].country_id);              
+            }
+          }
+        }
+        return Array.from(new Set(countries));
+      }
+      
+
+      function getCountriesFromContinent(geoJSON, continente) {
+          const paisesEnContinente = [];
+
+          for (const countryId in geoJSON.countries) {
+            if (geoJSON.countries.hasOwnProperty(countryId)) {
+              const country = geoJSON.countries[countryId];
+              if (country.continent === continente) {
+                paisesEnContinente.push(countryId);
+              }
+            }
+          }
+
+          return paisesEnContinente;
+      }
+
+      function getCountryManagerSex(json, sex) {
+        const countries = [];
+        for (var sportId in json.sports) {
+          for (var c in json.sports[sportId].female.countries)
+          {
+            if(json.sports[sportId].female.countries[c].manager_sex === sex)
+            {
+              countries.push(json.sports[sportId].female.countries[c].country_id);
+            }
+          }
+          for (var w in json.sports[sportId].male.countries)
+          {
+            if(json.sports[sportId].male.countries[w].manager_sex === sex)
+            {
+              countries.push(json.sports[sportId].male.countries[w].country_id);
+            }
+          }
+        }
+        return Array.from(new Set(countries));
+      }
+
+      function getCategory(json, sex) {
+        const countries = [];
+        for (var sportId in json.sports) {
+          if(sex === "female")
+          {
+            for (var c in json.sports[sportId].female.countries)
+            {
+              countries.push(json.sports[sportId].female.countries[c].country_id);
+            }
+          }
+          else
+          {
+            for (var w in json.sports[sportId].male.countries)
+            {
+              countries.push(json.sports[sportId].male.countries[w].country_id);              
+            }
+          }
+        }
+        return Array.from(new Set(countries));
+      }
+
+
+      function getCountriesByRank(json, rankGroup)
+      { 
+        const countries = [];
+        for (var sportId in json.sports) {
+          for (var c in json.sports[sportId].female.countries)
+          {
+            const rank = json.sports[sportId].female.countries[c].result;
+            if ((rankGroup === 1 && rank <= 4) ||
+            (rankGroup === 2 && rank >= 5 && rank <= 10) ||
+            (rankGroup === 3 && rank >= 11)) 
+            {
+              countries.push(json.sports[sportId].female.countries[c].country_id);
+            }
+          }
+          for (var w in json.sports[sportId].male.countries)
+          {
+            const rank = json.sports[sportId].male.countries[w].result;
+            if ((rankGroup === 1 && rank <= 4) ||
+            (rankGroup === 2 && rank >= 5 && rank <= 10) ||
+            (rankGroup === 3 && rank >= 11)) 
+            {
+              countries.push(json.sports[sportId].male.countries[w].country_id);
+            }
+          }
+        }
+        return Array.from(new Set(countries));
+      }
+
+     
+      $.getJSON('../data/data.json', function(data) {
+        const filterMale = getCountryManagerSex(data, "male");
+        const filterFemale = getCountryManagerSex(data, "female");
+
+        const filterBaseball = getCountriesBySport(data, "baseball");
+        const filterVolleyball = getCountriesBySport(data, "voly");
+        const filterFutbol = getCountriesBySport(data, "futbol");
+        const filterRugby = getCountriesBySport(data, "rugby");
+        const filterHandball = getCountriesBySport(data, "handball");
+        const filterSoftball = getCountriesBySport(data, "softball");
+        const filterPolo = getCountriesBySport(data, "polo");
+        const filterHockey = getCountriesBySport(data, "hockey");
+        const filterBasket = getCountriesBySport(data, "basket");
+
+        const filterContinent = getCountriesFromContinent(data, "América");
+        const filterContinent2 = getCountriesFromContinent(data, "África");
+        const filterContinent3 = getCountriesFromContinent(data, "Asia");
+        const filterContinent4 = getCountriesFromContinent(data, "Europa");
+        const filterContinent5 = getCountriesFromContinent(data, "Australia y Oceanía");
+
+
+        filterCategory.addEventListener("change", function () {
+          const selectedValue = filterCategory.value;
+          if(selectedValue !== "null")
+          {
+            team_sexList = (selectedValue === "male") ? getCategory(data, selectedValue) : getCategory(data, selectedValue);
+          }
+          else
+          {
+            team_sexList = allCountries;
+          }
+        });
+
+        filterGender.addEventListener("change", function () {
+          const selectedValue = filterGender.value;
+          if(selectedValue !== "null")
+          {
+            trainer_sexList = (selectedValue === "male") ? filterMale : filterFemale;
+          }
+          else
+          {
+            trainer_sexList = allCountries;
+          }
+        });
+
+        continentSelect.addEventListener("change", function() {
+          const selectedValue = continentSelect.value;
+          if (selectedValue === "null")
+          {
+            continentsList = allCountries;
+          }
+           else {
+            
+            if (selectedValue === "América") {
+              continentsList = filterContinent;
+            } else if (selectedValue === "África") {
+              continentsList = filterContinent2;
+            } else if (selectedValue === "Asia") {
+              continentsList = filterContinent3;
+            } else if (selectedValue === "Europa") {
+              continentsList = filterContinent4;
+            } else if (selectedValue === "Australia y Oceanía") {
+              continentsList = filterContinent5;
+            }
+          }
+        });
+
+
+        filterSport.addEventListener("change", function() {
+          const selectedValue = filterSport.value;
+
+          if (selectedValue === "null") {
+            sportsList = allCountries;
+          } else {
+            switch (selectedValue) {
+              case "all":
+                // Muestra todos los países
+                sportsList = [].concat(
+                  filterBaseball,
+                  filterVolleyball,
+                  filterFutbol,
+                  filterRugby,
+                  filterHandball,
+                  filterSoftball,
+                  filterPolo,
+                  filterHockey,
+                  filterBasket
+                );
+                break;
+              case "baseball":
+                sportsList = filterBaseball;
+                break;
+              case "voly":
+                sportsList = filterVolleyball;
+                break;
+              case "futbol":
+                sportsList = filterFutbol;
+                break;
+              case "rugby":
+                sportsList = filterRugby;
+                break;
+              case "handball":
+                sportsList = filterHandball;
+                break;
+              case "softball":
+                sportsList = filterSoftball;
+                break;
+              case "polo":
+                sportsList = filterPolo;
+                break;
+              case "hockey":
+                sportsList = filterHockey;
+                break;
+              case "basket":
+                sportsList = filterBasket;
+                break;
+              default:
+                // En caso de un valor desconocido
+                sportsList = allCountries;
+                break;
+            }
+          }
+
+        });
+
+
+      });
+      
+      function parche() {
+        return new Promise((resolve, reject) => {
+          if (filterGender.value !== "null" && filterCategory.value !== "null" && filterSport.value !== "null" && filterSport.value !== "all")
+          {
+            $.getJSON('../data/data.json', function(data) {
+              let filterN = [];
+              for (var sportId in data.sports) {
+                if (sportId == filterSport.value) {
+                  for (var c in data.sports[sportId][filterCategory.value].countries) {
+                    if (data.sports[sportId][filterCategory.value].countries[c].manager_sex === filterGender.value) {
+                      filterN.push((data.sports[sportId][filterCategory.value].countries[c].country_id));
+                    }
+                  }
+                }
+              }
+              mergedList = Array.from(new Set(filterN));
+              resolve(mergedList);
+            });
+          } else {
+            mergedList = allCountries;
+            resolve(mergedList);
+          }
+        });
+      }
+
+
+      function parche2() {
+        return new Promise((resolve, reject) => {
+          if (filterGender.value !== "null" && filterCategory.value !== "null") {
+            $.getJSON('../data/data.json', function(data) {
+              let filterN = [];
+              for (var sportId in data.sports) {
+                  for (var c in data.sports[sportId][filterCategory.value].countries) {
+                    if (data.sports[sportId][filterCategory.value].countries[c].manager_sex === filterGender.value) {
+                      filterN.push((data.sports[sportId][filterCategory.value].countries[c].country_id));
+                    }
+                  }
+              }
+              mergedList = Array.from(new Set(filterN));
+              resolve(mergedList);
+            });
+          } else {
+            mergedList = allCountries;
+            resolve(mergedList);
+          }
+        });
+      }
+
+
+        async function MergeCountries()
+        {
+          if(filterSport.value !== "all" && filterSport.value !== "null" )
+          {
+            await parche();
+          }
+          if(filterSport.value === "all")
+          {
+            await parche2();
+          }
+          
+          let intersection = sportsList.filter(value => 
+          team_sexList.includes(value) &&
+          trainer_sexList.includes(value) &&
+          continentsList.includes(value) &&
+          mergedList.includes(value)
+          );
+          activeCountries = intersection;
+          updateMap();
+        }
+
+    </script>
+  </body>
+</html>

@@ -1,0 +1,647 @@
+<!-- 
+    chart = {
+  const svg = d3.create("svg")
+      .attr("viewBox", [0, 0, 960, 600]);
+
+  svg.append("path")
+      .datum(topojson.merge(us, us.objects.lower48.geometries))
+      .attr("fill", "#ddd")
+      .attr("d", d3.geoPath());
+
+  svg.append("path")
+      .datum(topojson.mesh(us, us.objects.lower48, (a, b) => a !== b))
+      .attr("fill", "none")
+      .attr("stroke", "white")
+      .attr("stroke-linejoin", "round")
+      .attr("d", d3.geoPath());
+
+  const g = svg.append("g")
+      .attr("fill", "none")
+      .attr("stroke", "black");
+
+  const dot = g.selectAll("circle")
+    .data(data)
+    .join("circle")
+      .attr("transform", d => `translate(${d})`);
+
+  svg.append("circle")
+      .attr("fill", "blue")
+      .attr("transform", `translate(${data[0]})`)
+      .attr("r", 3);
+
+  let previousDate = -Infinity;
+
+  return Object.assign(svg.node(), {
+    update(date) {
+      dot // enter
+        .filter(d => d.date > previousDate && d.date <= date)
+        .transition().attr("r", 3);
+      dot // exit
+        .filter(d => d.date <= previousDate && d.date > date)
+        .transition().attr("r", 0);
+      previousDate = date;
+    }
+  });
+}
+
+    Este código parece ser una visualización de datos geográficos usando las bibliotecas D3.js y TopoJSON. Aquí está una explicación paso a paso:
+
+const svg = d3.create("svg").attr("viewBox", [0, 0, 960, 600]); - Crea un nuevo elemento SVG con un viewBox de 960x600.
+
+svg.append("path")... - Añade dos caminos al SVG. El primer camino representa las geometrías fusionadas de los 48 estados inferiores de los Estados Unidos. El segundo camino representa las fronteras entre los estados.
+
+const g = svg.append("g")... - Añade un nuevo grupo al SVG. Este grupo se utilizará para contener los círculos que representan los datos.
+
+const dot = g.selectAll("circle")... - Selecciona todos los círculos en el grupo, une los datos a ellos, y establece su transformación para que se traduzcan a la posición especificada por los datos.
+
+svg.append("circle")... - Añade un círculo azul al SVG en la posición especificada por el primer elemento de los datos.
+
+return Object.assign(svg.node(), {... - Devuelve el nodo SVG con una función de actualización añadida. Esta función de actualización cambia el radio de los círculos basándose en si su fecha es mayor o menor que la fecha especificada.
+
+Espero que esto te ayude a entender mejor el código. Si tienes más preguntas, no dudes en preguntar. 😊
+
+update = chart.update(date) 
+data = (await FileAttachment("walmart.tsv").tsv())
+  .map(d => {
+    const p = projection(d);
+    p.date = parseDate(d.date);
+    return p;
+  })
+  .sort((a, b) => a.date - b.date) 
+
+  parseDate = d3.utcParse("%m/%d/%Y") 
+
+  projection = d3.geoAlbersUsa().scale(1280).translate([480, 300]) us = {
+  const us = await d3.json("https://cdn.jsdelivr.net/npm/us-atlas@1/us/10m.json");
+  us.objects.lower48 = {
+    type: "GeometryCollection",
+    geometries: us.objects.states.geometries.filter(d => d.id !== "02" && d.id !== "15")
+  };
+  return us;
+} 
+
+import {Scrubber} from "@mbostock/scrubber"
+
+
+Este código parece ser una visualización de datos geográficos usando las bibliotecas D3.js, TopoJSON y Scrubber. Aquí está una explicación paso a paso:
+
+update = chart.update(date) - Llama a la función update en el objeto chart que se definió anteriormente. Esta función actualiza el radio de los círculos en el gráfico basado en la fecha proporcionada.
+
+data = (await FileAttachment("walmart.tsv").tsv())... - Lee un archivo TSV (Tab Separated Values) llamado “walmart.tsv”, lo convierte en un array de objetos JavaScript, luego mapea y ordena los datos. Cada objeto en los datos tiene una propiedad date que se parsea usando d3.utcParse("%m/%d/%Y").
+
+projection = d3.geoAlbersUsa().scale(1280).translate([480, 300]) - Define una proyección geográfica para los Estados Unidos con una escala y una traducción específicas. Esta proyección se usa para transformar las coordenadas geográficas en coordenadas de píxeles.
+
+us = {... - Descarga un archivo JSON de geometrías de los estados de los Estados Unidos, luego filtra las geometrías para excluir Alaska (id “02”) y Hawaii (id “15”).
+
+import {Scrubber} from "@mbostock/scrubber" - Importa la biblioteca Scrubber de Mike Bostock. Scrubber es una biblioteca para hacer controles de reproducción para visualizaciones de datos. -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <base target="_top" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Mapa 01</title>
+
+    <!-- <button id="highlight-button">Resaltar Países</button> -->
+
+    <link rel="stylesheet" href="style.css">
+
+    <link
+      rel="shortcut icon"
+      type="image/x-icon"
+      href="docs/images/favicon.ico"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+
+    <!-- <script src="https://raw.githubusercontent.com/mapbox/mapbox-gl-leaflet/master/leaflet-mapbox-gl.js"></script> -->
+
+    <script src="http://unpkg.com/leaflet@latest/dist/leaflet.js"></script>
+    <!-- <script src="js/leaflet-providers.js"></script> -->
+    <!-- <script src="jquery-3.6.4.min.js"></script> -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+  </head>
+  <body>
+    <div class="content">
+        <div class="info_mipyme">
+            <div class="image_logo">
+                <img src="mipyme_logo.jpeg" alt="logo de mipyme" width="300" height="300">
+            </div>
+            <div class="intro_mipyme">
+                <h2>¿Qué es una MIPYME?</h2>
+                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Eum maxime commodi esse cumque ipsum! Dignissimos sequi ab fugit id debitis, quam nobis corporis voluptatum sint possimus quaerat voluptatem adipisci provident. Lorem ipsum dolor sit amet consectetur adipisicing elit. Ut, facere natus provident odio commodi minima assumenda ad maxime distinctio laboriosam dolores repudiandae rerum molestiae esse voluptas, ipsa dolor modi cum.</p>
+            </div>
+        </div>
+    
+        <div class="centered-content">
+          <div class="graph-text main-text">
+            <h3 class="oracion">
+              Distribución de empresas estatales vs privadas
+            </h3> 
+          </div>
+    
+          <div>
+            <div onchange="MergeCountries()">
+              <span>Categoría:&nbsp;</span>
+              <select id="categorySelect">
+                <option value="Servicios Técnicos"     >   Servicios Técnicos</option>
+                <option value="Manofactura" >   Manofactura</option>
+                <option value="Comercio y gastronomía"  >   Comercio y gastronomía</option>
+                <option value="Transporte"     >   Transporte</option>
+                <option value="Salud y Belleza"     >   Salud y Belleza</option>
+                <option value="Educación y servicios públicos y sociales">  Educación y servicios públicos y sociales</option>
+                <option value="Servicios Profesionales">    Servicios Profesionales</option>
+                <option value="Alojamiento y Turismo">       Alojamiento y Turismo</option>
+                <option value="Agropecuario, ganadería, forestal y pesca" >    Agropecuario, ganadería, forestal y pesca</option>
+                  <option value="Medios">   Medios</option>
+                  <option value="Arte, deporte, recreación y entretenimiento">   Arte, deporte, recreación y entretenimiento</option>
+                  <option value="Construcción">   Construcción</option>
+                  <option value="Medio Ambiente y Reciclaje">   Medio Ambiente y Reciclaje</option>
+                  <option value="Energía, agua y gas">   Energía, agua y gas</option>
+                  <option value="Industrias">   Industrias</option>
+                  <option value="Asociaciones">   Asociaciones</option>
+                  <option value="Almacenamiento y Logística">   Almacenamiento y Logística</option>
+    
+                </select>
+    
+                <span>&nbsp;&nbsp;Provinvia:&nbsp;</span>
+                <select id="provinciaSelect">
+                  <option value="Todas">Todas</option>
+                  <option value="Pinar del Río">Pinar del Río</option>
+                  <option value="La Habana">La Habana</option>
+                  <option value="Mayabeque">Mayabeque</option>
+                  <option value="Artemisa">Artemisa</option>
+                  <option value="Matanzas">Matanzas</option>
+                  <option value="Cienfuegos">Cienfuegos</option>
+                  <option value="Villa Clara">Villa Clara</option>
+                  <option value="Santis Spíritus">Santis Spíritus</option>
+                  <option value="Camaguey">Camaguey</option>
+                  <option value="Las Tunas">Las Tunas</option>
+                  <option value="Holguín">Holguín</option>
+                  <option value="Granma">Granma</option>
+                  <option value="Santiago de Cuba">Santiago de Cuba</option>
+                  <option value="Guantánamo">Guantánamo</option>
+                  <option value="Isla de la Juventud">Isla de la Juventud</option>
+                </select>
+              </div>
+          </div>
+        <div id="map" class="map"></div>
+        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Enim rerum neque sint necessitatibus nisi dolores nam quia aliquam eius similique? Nulla qui aspernatur similique illum adipisci dicta nam vero dolore? Lorem ipsum dolor sit amet consectetur, adipisicing elit. Nisi earum magni magnam voluptates quia odio nulla voluptatem corrupti maiores similique perferendis ipsam deserunt ipsum fuga repellat accusamus, vitae sapiente amet! Lorem ipsum dolor sit amet consectetur adipisicing elit. Sequi beatae qui minus porro, repudiandae corporis delectus expedita. Quis consequuntur dicta libero alias officia quidem cupiditate, recusandae inventore, vel reiciendis repellendus?</p>
+        
+            <div class="graph-text main-text">
+              <h3 class="oracion">
+                Distribución de empresas por tamaños
+              </h3> 
+            </div>
+            <div class="empresas_size">
+                <div class="colum_iconos">
+                    <div class="icono_emresa">
+                        <img src="icono_mipyme.png" alt="icono de mipyme" width="150px">
+                    </div>
+                    <div class="cantidad_icono">
+                        <img src="cantidad_icono.jpg" alt="cantidad" width="60px">
+                    </div>
+                </div>
+                <div class="colum_iconos">
+                    <div class="icono_emresa">
+                        <img src="icono_mipyme.png" alt="icono de mipyme" width="150px">
+                    </div>
+                    <div class="cantidad_icono">
+                        <img src="cantidad_icono.jpg" alt="cantidad" width="60px">
+                    </div>
+                </div>
+                <div class="colum_iconos">
+                    <div class="icono_emresa">
+                        <img src="icono_mipyme.png" alt="icono de mipyme" width="150px">
+                    </div>
+                    <div class="cantidad_icono">
+                        <img src="cantidad_icono.jpg" alt="cantidad" width="60px">
+                    </div>
+                </div>
+            </div>
+            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Modi labore sapiente, possimus repudiandae commodi ab libero aliquid itaque, saepe voluptatibus nulla dolorem! Ullam dolorem est id dolor quae, ad unde. Lorem, ipsum dolor sit amet consectetur adipisicing elit. Aut libero illo quia! Assumenda, dignissimos qui ullam quia ratione voluptatibus doloremque consequuntur voluptas, distinctio sequi quod sit debitis laborum numquam error.</p>
+            <div class="info_mipyme">
+                <div class="pastel_icono">
+                    <img src="pastel_icono.png" alt="grafico de pastel" width="200px">
+                </div>
+                <div class="pastel_text">
+                    <h2>¿Qué es una MIPYME?</h2>
+                    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Eum maxime commodi esse cumque ipsum! Dignissimos sequi ab fugit id debitis, quam nobis corporis voluptatum sint possimus quaerat voluptatem adipisci provident. Lorem ipsum dolor sit amet consectetur adipisicing elit. Ut, facere natus provident odio commodi minima assumenda ad maxime distinctio laboriosam dolores repudiandae rerum molestiae esse voluptas, ipsa dolor modi cum.</p>
+                </div>
+            </div>
+            
+            <div id="chart"></div>
+
+    </div>
+
+    <script type="text/javascript" src="countries.js"></script>
+
+    <script type="text/javascript">
+        const map = L.map("map", {zoomControl: false}).setView([21.5, -79.5], 6);
+
+        async function load_map(){
+            let url = '../cuba-geojsons/geojson_by_region_division/by_provinces/cuba.geojson';
+            const response = await fetch (url)
+            const shape_obj = await response.json();
+            var provincias = L.geoJSON(shape_obj,{
+                style: 
+                function(feature){
+                    return {
+                        //color: 'red',
+                        weight: 1,
+                        fill: false,
+                        className: "provincia"
+                    };
+                },
+                onEachFeature: function (feature, layer) {
+                    layer.on({
+                      click: async function zoomToFeature(e) {
+                        var layer = e.target;
+                        //map.fitBounds(layer.getBounds());
+                        var popupContent = layer.feature.properties.province;
+                        layer.bindPopup(popupContent).openPopup();
+                      },
+                    });}
+            }).addTo(map);
+            map.dragging.disable();
+            map.touchZoom.disable();
+            map.doubleClickZoom.disable();
+            map.boxZoom.disable();
+            map.scrollWheelZoom.disable();
+            //map.removeControl(map.zoomControl); 
+            return shape_obj;
+          }
+          load_map()
+          
+          //import {Swatches} from "@d3/color-legend"
+          async function load_bubble(){
+              // Especificar las dimensiones del gráfico
+             const data =  [
+            {
+                id: "flare.analytics.cluster.AgglomerativeCluster",
+                value: 3938
+              }
+            ,{
+                id: "flare.analytics.cluster.CommunityStructure",
+                value: 3812
+              }
+            ,{
+                id: "flare.analytics.cluster.HierarchicalCluster",
+                value: 6714
+              }
+            ,{
+                id: "flare.analytics.cluster.MergeEdge",
+                value: 743
+              }
+            ,{
+                id: "flare.analytics.graph.BetweennessCentrality",
+                value: 3534
+              }
+            ,{
+                id: "flare.analytics.graph.LinkDistance",
+                value: 5731
+              }
+            ,{
+                id: "flare.analytics.graph.MaxFlowMinCut",
+                value: 7840
+              }
+            ,{
+                id: "flare.analytics.graph.ShortestPaths",
+                value: 5914
+              }
+            ,{
+                id: "flare.analytics.graph.SpanningTree",
+                value: 3416
+              }
+            ,{
+                id: "flare.analytics.optimization.AspectRatioBanker",
+                value: 7074
+              }
+              ,{id: "flare.animate.Easing", value: 17010}
+              ,{id: "flare.animate.FunctionSequence", value: 5842}
+              ,{id: "flare.animate.interpolate.ArrayInterpolator", value: 1983}
+              ,{id: "flare.animate.interpolate.ColorInterpolator", value: 2047}
+              ,{id: "flare.animate.interpolate.DateInterpolator", value: 1375}
+              ,{id: "flare.animate.interpolate.Interpolator", value: 8746}
+              ,{id: "flare.animate.interpolate.MatrixInterpolator", value: 2202}
+              ,{id: "flare.animate.interpolate.NumberInterpolator", value: 1382}
+              ,{id: "flare.animate.interpolate.ObjectInterpolator", value: 1629}
+              ,{id: "flare.animate.interpolate.PointInterpolator", value: 1675}
+              ,{id: "flare.animate.interpolate.RectangleInterpolator", value: 2042}
+              ,{id: "flare.animate.ISchedulable", value: 1041}
+              ,{id: "flare.animate.Parallel", value: 5176}
+              ,{id: "flare.animate.Pause", value: 449}
+              ,{id: "flare.animate.Scheduler", value: 5593}
+              ,{id: "flare.animate.Sequence", value: 5534}
+              ,{id: "flare.animate.Transition", value: 9201}
+              ,{id: "flare.animate.Transitioner", value: 19975}
+              ,{id: "flare.animate.TransitionEvent", value: 1116}
+              ,{id: "flare.animate.Tween", value: 6006}
+              ,{id: "flare.data.converters.Converters", value: 721}
+              ,{id: "flare.data.converters.DelimitedTextConverter", value: 4294}
+              ,{id: "flare.data.converters.GraphMLConverter", value: 9800}
+              ,{id: "flare.data.converters.IDataConverter", value: 1314}
+              ,{id: "flare.data.converters.JSONConverter", value: 2220}
+              ,{id: "flare.data.DataField", value: 1759}
+              ,{id: "flare.data.DataSchema", value: 2165}
+              ,{id: "flare.data.DataSet", value: 586}
+              ,{id: "flare.data.DataSource", value: 3331}
+              ,{id: "flare.data.DataTable", value: 772}
+              ,{id: "flare.data.DataUtil", value: 3322}
+              ,{id: "flare.display.DirtySprite", value: 8833}
+              ,{id: "flare.display.LineSprite", value: 1732}
+              ,{id: "flare.display.RectSprite", value: 3623}
+              ,{id: "flare.display.TextSprite", value: 10066}
+              ,{id: "flare.flex.FlareVis", value: 4116}
+              ,{id: "flare.physics.DragForce", value: 1082}
+              ,{id: "flare.physics.GravityForce", value: 1336}
+              ,{id: "flare.physics.IForce", value: 319}
+              ,{id: "flare.physics.NBodyForce", value: 10498}
+              ,{id: "flare.physics.Particle", value: 2822}
+              ,{id: "flare.physics.Simulation", value: 9983}
+              ,{id: "flare.physics.Spring", value: 2213}
+              ,{id: "flare.physics.SpringForce", value: 1681}
+              ,{id: "flare.query.AggregateExpression", value: 1616}
+              ,{id: "flare.query.And", value: 1027}
+              ,{id: "flare.query.Arithmetic", value: 3891}
+              ,{id: "flare.query.Average", value: 891}
+              ,{id: "flare.query.BinaryExpression", value: 2893}
+              ,{id: "flare.query.Comparison", value: 5103}
+              ,{id: "flare.query.CompositeExpression", value: 3677}
+              ,{id: "flare.query.Count", value: 781}
+              ,{id: "flare.query.DateUtil", value: 4141}
+              ,{id: "flare.query.Distinct", value: 933}
+              ,{id: "flare.query.Expression", value: 5130}
+              ,{id: "flare.query.ExpressionIterator", value: 3617}
+              ,{id: "flare.query.Fn", value: 3240}
+              ,{id: "flare.query.If", value: 2732}
+              ,{id: "flare.query.IsA", value: 2039}
+              ,{id: "flare.query.Literal", value: 1214}
+              ,{id: "flare.query.Match", value: 3748}
+              ,{id: "flare.query.Maximum", value: 843}
+              ,{id: "flare.query.methods.add", value: 593}
+              ,{id: "flare.query.methods.and", value: 330}
+              ,{id: "flare.query.methods.average", value: 287}
+              ,{id: "flare.query.methods.count", value: 277}
+              ,{id: "flare.query.methods.distinct", value: 292}
+              ,{id: "flare.query.methods.div", value: 595}
+              ,{id: "flare.query.methods.eq", value: 594}
+              ,{id: "flare.query.methods.fn", value: 460}
+              ,{id: "flare.query.methods.gt", value: 603}
+              ,{id: "flare.query.methods.gte", value: 625}
+              ,{id: "flare.query.methods.iff", value: 748}
+              ,{id: "flare.query.methods.isa", value: 461}
+              ,{id: "flare.query.methods.lt", value: 597}
+              ,{id: "flare.query.methods.lte", value: 619}
+              ,{id: "flare.query.methods.max", value: 283}
+              ,{id: "flare.query.methods.min", value: 283}
+              ,{id: "flare.query.methods.mod", value: 591}
+              ,{id: "flare.query.methods.mul", value: 603}
+              ,{id: "flare.query.methods.neq", value: 599}
+              ,{id: "flare.query.methods.not", value: 386}
+              ,{id: "flare.query.methods.or", value: 323}
+              ,{id: "flare.query.methods.orderby", value: 307}
+              ,{id: "flare.query.methods.range", value: 772}
+              ,{id: "flare.query.methods.select", value: 296}
+              ,{id: "flare.query.methods.stddev", value: 363}
+              ,{id: "flare.query.methods.sub", value: 600}
+              ,{id: "flare.query.methods.sum", value: 280}
+              ,{id: "flare.query.methods.update", value: 307}
+                ,{id: "flare.query.methods.variance", value: 335}
+                ,{id: "flare.query.methods.where", value: 299}
+                ,{id: "flare.query.methods.xor", value: 354}
+                ,{id: "flare.query.methods._", value: 264}
+                ,{id: "flare.query.Minimum", value: 843}
+                ,{id: "flare.query.Not", value: 1554}
+                ,{id: "flare.query.Or", value: 970}
+                ,{id: "flare.query.Query", value: 13896}
+                ,{id: "flare.query.Range", value: 1594}
+                ,{id: "flare.query.StringUtil", value: 4130}
+                ,{id: "flare.query.Sum", value: 791}
+                ,{id: "flare.query.Variable", value: 1124}
+                ,{id: "flare.query.Variance", value: 1876}
+                ,{id: "flare.query.Xor", value: 1101}
+                ,{id: "flare.scale.IScaleMap", value: 2105}
+                ,{id: "flare.scale.LinearScale", value: 1316}
+                ,{id: "flare.scale.LogScale", value: 3151}
+                ,{id: "flare.scale.OrdinalScale", value: 3770}
+                ,{id: "flare.scale.QuantileScale", value: 2435}
+                ,{id: "flare.scale.QuantitativeScale", value: 4839}
+                ,{id: "flare.scale.RootScale", value: 1756}
+                ,{id: "flare.scale.Scale", value: 4268}
+                ,{id: "flare.scale.ScaleType", value: 1821}
+                ,{id: "flare.scale.TimeScale", value: 5833}
+                ,{id: "flare.util.Arrays", value: 8258}
+                ,{id: "flare.util.Colors", value: 10001}
+                ,{id: "flare.util.Dates", value: 8217}
+                ,{id: "flare.util.Displays", value: 12555}
+                ,{id: "flare.util.Filter", value: 2324}
+                ,{id: "flare.util.Geometry", value: 10993}
+                ,{id: "flare.util.heap.FibonacciHeap", value: 9354}
+                ,{id: "flare.util.heap.HeapNode", value: 1233}
+                ,{id: "flare.util.IEvaluable", value: 335}
+                ,{id: "flare.util.IPredicate", value: 383}
+                ,{id: "flare.util.IValueProxy", value: 874}
+                ,{id: "flare.util.math.DenseMatrix", value: 3165}
+                ,{id: "flare.util.math.IMatrix", value: 2815}
+                ,{id: "flare.util.math.SparseMatrix", value: 3366}
+                ,{id: "flare.util.Maths", value: 17705}
+                ,{id: "flare.util.Orientation", value: 1486}
+                ,{id: "flare.util.palette.ColorPalette", value: 6367}
+                ,{id: "flare.util.palette.Palette", value: 1229}
+                ,{id: "flare.util.palette.ShapePalette", value: 2059}
+                ,{id: "flare.util.palette.SizePalette", value: 2291}
+                ,{id: "flare.util.Property", value: 5559}
+                ,{id: "flare.util.Shapes", value: 19118}
+                ,{id: "flare.util.Sort", value: 6887}
+                ,{id: "flare.util.Stats", value: 6557}
+                ,{id: "flare.util.Strings", value: 22026}
+                ,{id: "flare.vis.axis.Axes", value: 1302}
+                ,{id: "flare.vis.axis.Axis", value: 24593}
+                ,{id: "flare.vis.axis.AxisGridLine", value: 652}
+                ,{id: "flare.vis.axis.AxisLabel", value: 636}
+                ,{id: "flare.vis.axis.CartesianAxes", value: 6703}
+                ,{id: "flare.vis.controls.AnchorControl", value: 2138}
+                ,{id: "flare.vis.controls.ClickControl", value: 3824}
+                ,{id: "flare.vis.controls.Control", value: 1353}
+                ,{id: "flare.vis.controls.ControlList", value: 4665}
+                ,{id: "flare.vis.controls.DragControl", value: 2649}
+                ,{id: "flare.vis.controls.ExpandControl", value: 2832}
+                ,{id: "flare.vis.controls.HoverControl", value: 4896}
+                ,{id: "flare.vis.controls.IControl", value: 763}
+                ,{id: "flare.vis.controls.PanZoomControl", value: 5222}
+                ,{id: "flare.vis.controls.SelectionControl", value: 7862}
+                ,{id: "flare.vis.controls.TooltipControl", value: 8435}
+                ,{id: "flare.vis.data.Data", value: 20544}
+                ,{id: "flare.vis.data.DataList", value: 19788}
+                ,{id: "flare.vis.data.DataSprite", value: 10349}
+                ,{id: "flare.vis.data.EdgeSprite", value: 3301}
+                ,{id: "flare.vis.data.NodeSprite", value: 19382}
+                ,{id: "flare.vis.data.render.ArrowType", value: 698}
+                ,{id: "flare.vis.data.render.EdgeRenderer", value: 5569}
+                ,{id: "flare.vis.data.render.IRenderer", value: 353}
+                ,{id: "flare.vis.data.render.ShapeRenderer", value: 2247}
+                ,{id: "flare.vis.data.ScaleBinding", value: 11275}
+                ,{id: "flare.vis.data.Tree", value: 7147}
+                ,{id: "flare.vis.data.TreeBuilder", value: 9930}
+                ,{id: "flare.vis.events.DataEvent", value: 2313}
+                ,{id: "flare.vis.events.SelectionEvent", value: 1880}
+                ,{id: "flare.vis.events.TooltipEvent", value: 1701}
+                ,{id: "flare.vis.events.VisualizationEvent", value: 1117}
+                ,{id: "flare.vis.legend.Legend", value: 20859}
+                ,{id: "flare.vis.legend.LegendItem", value: 4614}
+                ,{id: "flare.vis.legend.LegendRange", value: 10530}
+                ,{id: "flare.vis.operator.distortion.BifocalDistortion", value: 4461}
+                ,{id: "flare.vis.operator.distortion.Distortion", value: 6314}
+                ,{id: "flare.vis.operator.distortion.FisheyeDistortion", value: 3444}
+                ,{id: "flare.vis.operator.encoder.ColorEncoder", value: 3179}
+                ,{id: "flare.vis.operator.encoder.Encoder", value: 4060}
+                ,{id: "flare.vis.operator.encoder.PropertyEncoder", value: 4138}
+                ,{id: "flare.vis.operator.encoder.ShapeEncoder", value: 1690}
+                ,{id: "flare.vis.operator.encoder.SizeEncoder", value: 1830}
+                ,{id: "flare.vis.operator.filter.FisheyeTreeFilter", value: 5219}
+                ,{id: "flare.vis.operator.filter.GraphDistanceFilter", value: 3165}
+                ,{id: "flare.vis.operator.filter.VisibilityFilter", value: 3509}
+                ,{id: "flare.vis.operator.IOperator", value: 1286}
+                ,{id: "flare.vis.operator.label.Labeler", value: 9956}
+                ,{id: "flare.vis.operator.label.RadialLabeler", value: 3899}
+                ,{id: "flare.vis.operator.label.StackedAreaLabeler", value: 3202}
+                ,{id: "flare.vis.operator.layout.AxisLayout", value: 6725}
+                ,{id: "flare.vis.operator.layout.BundledEdgeRouter", value: 3727}
+                ,{id: "flare.vis.operator.layout.CircleLayout", value: 9317}
+                ,{id: "flare.vis.operator.layout.CirclePackingLayout", value: 12003}
+                ,{id: "flare.vis.operator.layout.DendrogramLayout", value: 4853}
+                ,{id: "flare.vis.operator.layout.ForceDirectedLayout", value: 8411}
+                ,{id: "flare.vis.operator.layout.IcicleTreeLayout", value: 4864}
+                ,{id: "flare.vis.operator.layout.IndentedTreeLayout", value: 3174}
+                ,{id: "flare.vis.operator.layout.Layout", value: 7881}
+                ,{id: "flare.vis.operator.layout.NodeLinkTreeLayout", value: 12870}
+                ,{id: "flare.vis.operator.layout.PieLayout", value: 2728}
+                ,{id: "flare.vis.operator.layout.RadialTreeLayout", value: 12348}
+                ,{id: "flare.vis.operator.layout.RandomLayout", value: 870}
+                ,{id: "flare.vis.operator.layout.StackedAreaLayout", value: 9121}
+                ,{id: "flare.vis.operator.layout.TreeMapLayout", value: 9191}
+                ,{id: "flare.vis.operator.Operator", value: 2490}
+                ,{id: "flare.vis.operator.OperatorList", value: 5248}
+                ,{id: "flare.vis.operator.OperatorSequence", value: 4190}
+                ,{id: "flare.vis.operator.OperatorSwitch", value: 2581}
+                ,{id: "flare.vis.operator.SortOperator", value: 2023}
+                ,{id: "flare.vis.Visualization", value: 16540}
+              ]
+              
+              const width = 928;
+              const height = width;
+              const margin = 1; // para evitar cortar el trazo del círculo raíz
+              const name = d => d.id.split(".").pop(); // "Strings" de "flare.util.Strings"
+              const group = d => d.id.split(".")[1]; // "util" de "flare.util.Strings"
+              const names = d => name(d).split(/(?=[A-Z][a-z])|\s+/g); // ["Legend", "Item"] de "flare.vis.legend.LegendItems"
+          
+              // Especificar el formato de número para los valores
+              const format = d3.format(",d");
+              
+              let palabras = {}; // Almacena las palabras y sus colores correspondientes
+              let colores = ['mipyme_logo.jpeg', 'paste_icono.png', 'icono_mipyme.png']; // Tu esquema de colores
+              let indiceColor = 0; // Índice para el siguiente color a asignar
+
+              function color(palabra) {
+                // Si la palabra ya tiene un color asignado, devuélvelo
+                if (palabras[palabra]) {
+                  return palabras[palabra];
+                }
+
+                // Si la palabra es nueva, asígnale un nuevo color
+                let nuevoColor = colores[indiceColor % colores.length];
+                palabras[palabra] = nuevoColor;
+
+                // Incrementa el índice para la próxima palabra nueva
+                indiceColor++;
+
+                return nuevoColor;
+              }
+
+          
+              // Crear el diseño del paquete
+              const pack = d3.pack()
+                  .size([width - margin * 2, height - margin * 2])
+                  .padding(3);
+          
+              // Calcular la jerarquía a partir de los datos (planos); exponer los valores
+              // para cada nodo; finalmente aplicar el diseño del paquete
+              const root = pack(d3.hierarchy({children: data})
+                  .sum(d => d.value));
+          
+              // Crear el contenedor SVG
+              const svg = d3.create("svg")
+                  .attr("width", width)
+                  .attr("height", height)
+                  .attr("viewBox", [-margin, -margin, width, height])
+                  .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif;")
+                  .attr("text-anchor", "middle");
+          
+              // Colocar cada nodo (hoja) de acuerdo a los valores x e y del diseño
+              const node = svg.append("g")
+                    .selectAll()
+                    .data(root.leaves())
+                    .enter()
+                    .append("g")
+                      .attr("transform", d => `translate(${d.x},${d.y})`);
+          
+              // Añadir un título
+              node.append("title")
+                  .text(d => `${d.data.id}\n${format(d.value)}`);
+          
+              // Añadir un círculo lleno
+              node.append("image")
+                  .attr("xlink:href", d => color(group(d.data))) // Ruta a la imagen
+                  .attr("transform", d => `translate(${d.x}, ${d.y})`) // Posición de la imagen
+                  .attr("width", d => d.r * 2) // Ancho de la imagen
+                  .attr("height", d => d.r * 2);
+              /*node.append("circle")
+                  .attr("fill-opacity", 0.7)
+                  .attr("r", d => d.r)
+                  .attr("fill", d => color(group(d.data)));*/
+          
+              // Añadir una etiqueta
+              const text = node.append("text")
+                  .attr("clip-path", d => `circle(${d.r})`);
+          
+              // Añadir un tspan para cada palabra separada por CamelCase
+              text.selectAll()
+                .data(d => names(d.data))
+                .enter()
+                .append("tspan")
+                  .attr("x", 0)
+                  .attr("y", (d, i, nodes) => `${i - nodes.length / 2 + 0.35}em`)
+                  .text(d => d);
+
+          
+              // Añadir un tspan para el valor del nodo
+              text.append("tspan")
+                  .attr("x", 0)
+                  .attr("y", d => `${names(d.data).length / 2 + 0.35}em`)
+                  .attr("fill-opacity", 0.7)
+                  .text(d => format(d.value));
+          
+              // Añadir el gráfico al div con id "chart"
+              document.getElementById("chart").appendChild(svg.node());
+          
+          
+        }
+        load_bubble()
+        </script>
+  </body>
+</html>
